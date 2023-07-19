@@ -1,13 +1,8 @@
 library(sf)
-library(rnaturalearthhires)
-library(nzsf)
 library(shiny)
 
-CCSBTs <- CCSBT[CCSBT$Area %in% 1:8, ] |> st_make_valid() |>
-  st_union(by_feature = TRUE) |> st_shift_longitude()
-
-the_map <- rnaturalearth::ne_countries(returnclass = "sf")
-
+CCSBTs <- readRDS("data/CCSBT_areas.RDS")
+the_map <- readRDS("data/the_map.RDS")
 
 #area labels
 area.labels <-
