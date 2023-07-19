@@ -33,48 +33,47 @@ region <- reactiveValues(Area = 4)
 
 ui <-
   fluidPage(
-    tags$head(#includeCSS("www/CSS.css"),
-      tags$style(HTML( "#FL {  height: 48px; font-size: 40px}
-                        #quarter {font-size: 18px; }"
+    tags$head(includeCSS("www/CSS.css"),
+              tags$link(rel = "stylesheet", type = "text/css", href = "www/CSS.css"),
+      tags$style(HTML( "#FL {  height: 42px; font-size: 36px}
+                        #quarter {font-size: 18px;}
+                       input {font-family: 'Arial Black';}"
                         ))),
     titlePanel("Southern Bluefin Tuna fork length-to-weight calculator"),
-    fluidRow(
-     column(6,  
-      plotOutput("plot", click = "plot_click")),
-     column(6,
-      plotOutput("curve", click = "curve_click"))
-    ),
-    
-    fluidRow( column(1),
-              column(3,
-                     radioButtons(
-                       inputId = "quarter",
-                       "Quarter",
-                       choiceNames = season.names,
-                       choiceValues = 1:4)
-    ),
-    column(
-        3,
-        div(style = "font-size:18px;
-            padding-top:10px",
-            numericInput(
-          inputId = "FL",
-          label = "Fork Length (cm)",
-          min = FLrange$min,
-          max = FLrange$max,
-          step = 5,
-          value = 100, width = "150px"
-        ))),
-    column(4,
-        div(style="
-        padding-top:0px;
-        font-size: 24px;
+    fluidRow(column(1),
+      column(
+        3, div(style = "font-size:20px;
+               padding-top:30px;",
+               numericInput(
+              inputId = "FL",
+              label = "Fork Length (cm)",
+              min = FLrange$min,
+              max = FLrange$max,
+              step = 5,
+              value = 100, width = "80%"
+            )),
+           div(style = "font-size:18px;
+            padding-top:5px",
+            radioButtons(
+              inputId = "quarter",
+              "Quarter",
+              choiceNames = season.names,
+              choiceValues = 1:4)),
+              span(style = "font-size:18px", "Select region:"),
+             plotOutput("plot", click = "plot_click")),
+         column(3,
+                div(style="
+        padding-top:20px;
+        font-size: 30px;
         border: 0px;",
         tableOutput("weightTable"),
-        ))),
+                ),
+        textOutput("curveHeader"),
+      plotOutput("curve", click = "curve_click"))
+      ), 
     fluidRow(HTML("<em>Length to Processed weight parameters agreed at 1994 SBT trilateral workshop on Age and Growth,
-             Hobart, 17th Jan-4th Feb, 1994. From CSIRO database.</em>"))
-  )
+             Hobart, 17th Jan-4th Feb, 1994. From CSIRO database.</em>")))
+
 
 server <- function(input, output, session) {
   FL <- reactive({input$FL})
@@ -113,7 +112,8 @@ params <- reactive({
     }, #colnames = FALSE,
     align = "lr")
   
-  
+  output$curveHeader <-
+    renderText({paste0("Region: ", region$Area, ", ", "Quarter: ", input$quarter)})
   output$curve <-
     renderPlot({
       quart <- input$quarter
@@ -122,29 +122,38 @@ params <- reactive({
           FL = FLrange$min:FLrange$max,
           Weight = params()[[1]] * (FLrange$min:FLrange$max) ^ params()[[2]]
         )
-      par(mar = c(8,4,4,2) + 0.1)
+      par(mar = c(10,rep(0.8,3)))
       plot(type = "l",
         curve_data$FL,
         curve_data$Weight,
-        col = "red3",lwd = 1.5, 
+        col = "red2",lwd = 2, 
         xlim = c(0, 210),
         ylim = c(0, 180),
         xlab = "Fork length (cm)",
         ylab = "Estimated weight (kg)",
-        main = paste0("Region: ", region$Area, ",", "Quarter: ", quart),
-        cex.main = 1.75,
+        cex.main = 1.3,
         cex.axis = 1.3,
-        cex.lab = 1.4
+        cex.lab = 1.4,
+        yaxs = "i", xaxs = "i"
       )
+      lines(
+            x = c(FL(), FL()),
+            y = c(0, params()[[1]] * FL() ^ params()[[2]]),
+            lty = 2,lwd = 0.5)
+      lines(
+            x = c(0, FL()),
+            y = c(params()[[1]] * FL() ^ params()[[2]], params()[[1]] * FL() ^ params()[[2]]),
+            lty = 2,lwd = 0.5)
       points(
-        cex = 1.4, pch = 16,
-        c = "black",
+        cex = 1.5, pch = 16,
+        col = "#1b2d50",
         x = FL(),
         y = params()[[1]] * FL() ^ params()[[2]]
       )
     })
   
   output$plot <- renderPlot({
+    par(mar = c(12,0.5,0.5,1))
     plot(NA, type = "n",
          xlim = c(80, 185),
          ylim = c(-45, -10),
@@ -160,8 +169,6 @@ params <- reactive({
       xlim = c(80, 185),
       ylim = c(-45, -10),
       col = "forestgreen",
-      main = "Select region:",
-      cex.main = 2
       
     )
     cols <- rep(alpha("gold2", 0.3), 8)

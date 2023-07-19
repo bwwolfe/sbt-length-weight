@@ -1,13 +1,11 @@
 @font-face {  
-  src: url('FontsFree-Net-MoonBold.tff') format('truetype');
+  src: url('www/FontsFree-Net-MoonBold.tff') format('truetype');
   font-family: 'Moon';
 }
-
-.p_Style {
-	font-family: 'Moon';
-	color: #1b2d50;
+body {font-family: 'Moon';
+  color: #1b2d50; /* text color */
 }
-h2 {
-  font-family: 'Moon', sans-serif;
-  	color: #1b2d50;
+.p_Style {
+	font-family: 'Georgia';
+	color: #1b2d50;
 }
