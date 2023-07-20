@@ -28,68 +28,92 @@ region <- reactiveValues(Area = 4)
 
 ui <-
   fluidPage(
-    tags$head(includeCSS("www/CSS.css"),
-              tags$link(rel = "stylesheet", type = "text/css", href = "www/CSS.css"),
-      tags$style(HTML( "#FL {  height: 42px; font-size: 36px}
-                        #quarter {font-size: 18px;}
-                       input {font-family: 'Arial Black';}"
-                        ))),
-    titlePanel("Southern Bluefin Tuna fork length-to-weight calculator"),
-    fluidRow(column(1),
+    tags$head(
+      includeCSS("www/CSS.css"),
+      tags$link(rel = "stylesheet", type = "text/css", href = "www/CSS.css"),
+      tags$style(
+        HTML("#weightTable {align-self:center;}
+              #FL {  height: 58px; font-size: 34px}
+              #quarter {font-size: 18px;}
+              input {font-family: 'Courier New'; font-weight:bold;}"
+        )
+      )
+    ),
+    titlePanel("Southern Bluefin Tuna length to weight calculator"),
+    fluidRow(
       column(
-        3, div(style = "font-size:20px;
-               padding-top:30px;",
-               numericInput(
-              inputId = "FL",
-              label = "Fork Length (cm)",
-              min = FLrange$min,
-              max = FLrange$max,
-              step = 5,
-              value = 100, width = "80%"
-            )),
-           div(style = "font-size:18px;
-            padding-top:5px",
-            radioButtons(
-              inputId = "quarter",
-              "Quarter",
-              choiceNames = season.names,
-              choiceValues = 1:4)),
-              span(style = "font-size:18px", "Select region:"),
-             plotOutput("plot", click = "plot_click")),
-         column(3,
-                div(style="
-        padding-top:20px;
-        font-size: 30px;
-        border: 0px;",
-        tableOutput("weightTable"),
-                ),
-        textOutput("curveHeader"),
-      plotOutput("curve", click = "curve_click"))
-      ), 
-    fluidRow(HTML("<em>Length to Processed weight parameters agreed at 1994 SBT trilateral workshop on Age and Growth,
-             Hobart, 17th Jan-4th Feb, 1994. From CSIRO database.</em>")))
+        3,align = "left",
+        div(
+          style = "white-space: nowrap;
+                  font-size:26px;
+               padding-top:20px;",
+          numericInput(
+            inputId = "FL",
+            label = "Fork Length (cm)",
+            min = FLrange$min,
+            max = FLrange$max,
+            step = 5,
+            value = 130,
+            width = "45%"
+          )
+        ),
+        div(
+          style = "font-size:24px;
+            padding-top:5px;",
+          radioButtons(
+            inputId = "quarter",
+            "Quarter",
+            choiceNames = season.names,
+            choiceValues = 1:4, inline = TRUE
+          )
+        ),
+        span(style = "font-size:22px;padding:0px;", "Select region:"),
+        div(style = "padding:0px;vertical-align:top", plotOutput("plot", click = "plot_click"))
+      ),
+      column(
+        4, align = "center",
+        div(style = "font-size:24px;color:#efb50d;padding-top:15px;padding-bottom:0px;padding-left:30px;",
+            textOutput("curveHeader")),
+        div(
+          style = "
+        padding:0px;
+        font-size:24px;color:#274276;justify-content:center;
+          border:0px;",
+          tableOutput("weightTable"),
+        ),
+        div(plotOutput("curve", click = "curve_click"))
+      )),
+      fluidRow(HTML(
+          "<em>Length to Processed weight parameters agreed at 1994 SBT trilateral workshop on Age and Growth,
+             Hobart,<br>17th Jan-4th Feb, 1994. From CSIRO database.</em>"
+        
+      )
+    )
+  )
 
 
 server <- function(input, output, session) {
-  FL <- reactive({input$FL})
+  FL <- reactive({
+    input$FL
+  })
   observeEvent(input$plot_click,
                {
-              
-                xy.click <- st_within(st_point(unlist(input$plot_click[1:2])), CCSBTs)[[1]]
-                if(isTRUE( xy.click %in% 1:8 )) region$Area <- xy.click
-               }
-               )
-params <- reactive({
+                 xy.click <-
+                   st_within(st_point(unlist(input$plot_click[1:2])), CCSBTs)[[1]]
+                 if (isTRUE(xy.click %in% 1:8))
+                   region$Area <- xy.click
+               })
+  params <- reactive({
     region$Area
     param.names <-
       c(ifelse(input$FL >= 130,
-             "A_ADULT", "A_JUV"), 
-    ifelse(FL() >= 130,
-           "B_ADULT", "B_JUV"))
+               "A_ADULT", "A_JUV"),
+        ifelse(FL() >= 130,
+               "B_ADULT", "B_JUV"))
     lw.equations[lw.equations$STATISTICAL_AREA == region$Area &
-                 lw.equations$QUARTER == input$quarter, param.names]
-    })
-    
+                   lw.equations$QUARTER == input$quarter, param.names]
+  })
+  
   output$weightTable <-
     renderTable({
       params()[[1]] * FL() ^ params()[[2]]
@@ -100,15 +124,20 @@ params <- reactive({
       paste("Whole weight:", round(whole.weight, digits), "kg")
       
       data.frame(Estimated = c("Dressed:", "Whole:"),
-                 weight = c(paste(round(dressed.weight, digits), "kg"),
-                          paste(round(whole.weight, digits), "kg"))
-                 )
+                 weight = c(paste(round(
+                   dressed.weight, digits
+                 ), "kg"),
+                 paste(round(
+                   whole.weight, digits
+                 ), "kg")))
       
-    }, #colnames = FALSE,
+    }, colnames = FALSE,
     align = "lr")
   
   output$curveHeader <-
-    renderText({paste0("Region: ", region$Area, ", ", "Quarter: ", input$quarter)})
+    renderText({
+      paste0("Region ", region$Area, ", ", "Q", input$quarter)
+    })
   output$curve <-
     renderPlot({
       quart <- input$quarter
@@ -117,30 +146,39 @@ params <- reactive({
           FL = FLrange$min:FLrange$max,
           Weight = params()[[1]] * (FLrange$min:FLrange$max) ^ params()[[2]]
         )
-      par(mar = c(10,rep(0.8,3)))
-      plot(type = "l",
+      par(pty = "s", mai = c(1,1,0.2,1))
+      plot(
+        type = "l",
         curve_data$FL,
         curve_data$Weight,
-        col = "red2",lwd = 2, 
-        xlim = c(0, 210),
+        col = "red2",
+        lwd = 2,
+        xlim = c(0, 225),
         ylim = c(0, 180),
         xlab = "Fork length (cm)",
         ylab = "Estimated weight (kg)",
         cex.main = 1.3,
         cex.axis = 1.3,
         cex.lab = 1.4,
-        yaxs = "i", xaxs = "i"
+        yaxs = "i",
+        xaxs = "i", family = "mono"
+      )
+      box(which = "plot", lwd = 2.5, col = "#1b2d50")
+      lines(
+        x = c(FL(), FL()),
+        y = c(0, params()[[1]] * FL() ^ params()[[2]]),
+        lty = 2,
+        lwd = 0.5
       )
       lines(
-            x = c(FL(), FL()),
-            y = c(0, params()[[1]] * FL() ^ params()[[2]]),
-            lty = 2,lwd = 0.5)
-      lines(
-            x = c(0, FL()),
-            y = c(params()[[1]] * FL() ^ params()[[2]], params()[[1]] * FL() ^ params()[[2]]),
-            lty = 2,lwd = 0.5)
+        x = c(0, FL()),
+        y = c(params()[[1]] * FL() ^ params()[[2]], params()[[1]] * FL() ^ params()[[2]]),
+        lty = 2,
+        lwd = 0.5
+      )
       points(
-        cex = 1.5, pch = 16,
+        cex = 1.5,
+        pch = 16,
         col = "#1b2d50",
         x = FL(),
         y = params()[[1]] * FL() ^ params()[[2]]
@@ -148,21 +186,28 @@ params <- reactive({
     })
   
   output$plot <- renderPlot({
-    par(mar = c(12,0.5,0.5,1))
-    plot(NA, type = "n",
-         xlim = c(80, 185),
-         ylim = c(-45, -10),
-         xaxt =  "n", yaxt = "n",
-         xlab = "", ylab = "")
-    rect(par("usr")[1], par("usr")[3],
-                         par("usr")[2], par("usr")[4],
-                         col = "lightskyblue1")
+    par(mar = c(10,0.5,0.25,0.5))
+    plot(
+      NA,
+      type = "n",
+      xlim = c(80, 185),
+      ylim = c(-45,-10),
+      xaxt =  "n",
+      yaxt = "n",
+      xlab = "",
+      ylab = ""
+    )
+    rect(par("usr")[1],
+         par("usr")[3],
+         par("usr")[2],
+         par("usr")[4],
+         col = "lightskyblue1")
     par(new = TRUE)
     
     plot(
       the_map["geometry"],
       xlim = c(80, 185),
-      ylim = c(-45, -10),
+      ylim = c(-45,-10),
       col = "forestgreen",
       
     )
@@ -176,10 +221,9 @@ params <- reactive({
       add = T,
       col = cols
     )
-    text(area.labels, cex = 3)
+    text(area.labels, cex = 3.2, vfont = c("sans serif", "bold"))
     graphics::box(which = "plot", lwd = 2)
   })
-  
 }
 
-runApp(shinyApp(ui, server))
+shinyApp(ui, server)
