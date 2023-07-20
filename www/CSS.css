@@ -1,11 +1,12 @@
-@font-face {  
-  src: url('www/FontsFree-Net-MoonBold.tff') format('truetype');
-  font-family: 'Moon';
+
+@font-face {
+  font-family: 'moonbold';
+   src: url('fontsfree-net-moonbold-webfont.woff2') format('woff2'),
+        url('fontsfree-net-moonbold-webfont.woff') format('woff');
+        url('FontsFree-Net-MoonBold.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
 }
-body {font-family: 'Moon';
-  color: #1b2d50; /* text color */
-}
-.p_Style {
-	font-family: 'Georgia';
-	color: #1b2d50;
+body {font-family: 'moonbold';
+  color: #0f2652; /* text color */
 }

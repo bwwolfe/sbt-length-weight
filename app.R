@@ -1,6 +1,6 @@
 library(sf)
 library(shiny)
-
+library(ggplot2)
 CCSBTs <- readRDS("data/CCSBT_areas.RDS")
 the_map <- readRDS("data/the_map.RDS")
 
